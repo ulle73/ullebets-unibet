@@ -1,12 +1,12 @@
-name: Unibet Scheduler
+name: Unibet Data Sync
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "0 4 * * *"
   workflow_dispatch:
 
 concurrency:
-  group: unibet-scheduler
+  group: unibet-data-sync
   cancel-in-progress: false
 
 jobs:
@@ -17,19 +17,15 @@ jobs:
       MONGODB_URI: ${{ secrets.MONGODB_URI }}
       MONGODB_DB: ullebets_unibet
       SOURCE_MONGODB_DB: app
-      MAX_MATCHES_PER_RUN: 200
-      MAX_ODDS_JOBS_PER_RUN: 50
-      MAX_RAW_PAYLOAD_MB_PER_RUN: 200
-      RAW_ODDS_TTL_DAYS: 30
+      MAX_MATCHES_PER_RUN: 500
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm install --no-audit --no-fund
-      - name: Verify target database
-        run: npm run healthcheck
-      - name: Discover matches from ullebets-vecel app database
-        run: npm run discover
-      - name: Run due odds jobs
-        run: npm run worker:odds
+      - run: npm run healthcheck
+      - run: npm run indexes
+      - run: npm run source:scan
+      - run: npm run discover
+      - run: npm run import:snapshots
