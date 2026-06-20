@@ -6,7 +6,8 @@
   "scripts": {
     "healthcheck": "node scripts/healthcheck.js",
     "indexes": "node scripts/create-indexes.js",
-    "discover": "node scripts/discover-unibet.js",
+    "discover": "node scripts/discover-from-ullebets-vecel.js",
+    "discover:url-template": "node scripts/discover-unibet.js",
     "schedule": "node scripts/schedule-jobs.js",
     "worker:odds": "node scripts/run-odds-worker.js",
     "coverage": "node scripts/coverage-report.js",
