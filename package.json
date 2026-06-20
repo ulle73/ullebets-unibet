@@ -10,7 +10,8 @@
     "import:matches": "node scripts/discover-from-ullebets-vecel.js",
     "discover": "node scripts/discover-from-ullebets-vecel.js",
     "import:snapshots": "node scripts/import-existing-snapshots.js",
-    "sync": "npm run indexes && npm run source:scan && npm run import:matches && npm run import:snapshots",
+    "odds:raw": "node scripts/run-odds-worker.js",
+    "sync": "npm run indexes && npm run source:scan && npm run import:matches && npm run import:snapshots && npm run odds:raw",
     "coverage": "node scripts/coverage-report.js",
     "smoke": "npm run healthcheck && npm run sync"
   },
