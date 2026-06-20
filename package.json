@@ -1,0 +1,19 @@
+{
+  "name": "ullebets-unibet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "healthcheck": "node scripts/healthcheck.js",
+    "indexes": "node scripts/indexes.js",
+    "source:scan": "node scripts/source-scan.js",
+    "import:matches": "node scripts/import-matches.js",
+    "odds:raw": "node scripts/odds-raw.js",
+    "coverage": "node scripts/coverage.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "mongodb": "^6.20.0"
+  }
+}
