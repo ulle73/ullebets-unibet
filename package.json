@@ -1,0 +1,22 @@
+{
+  "name": "ullebets-unibet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "healthcheck": "node scripts/healthcheck.js",
+    "indexes": "node scripts/create-indexes.js",
+    "discover": "node scripts/discover-unibet.js",
+    "schedule": "node scripts/schedule-jobs.js",
+    "worker:odds": "node scripts/run-odds-worker.js",
+    "coverage": "node scripts/coverage-report.js",
+    "smoke": "npm run healthcheck && npm run indexes"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "mongodb": "^6.20.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
