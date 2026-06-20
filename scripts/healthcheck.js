@@ -1,47 +1,50 @@
-import dotenv from "dotenv";
-dotenv.config({ path: ".env.local", quiet: true });
+import { getDb, closeMongoClient } from "../lib/db.js";
+import { config } from "../lib/config.js";
 
-import { clientPromise } from "../lib/db.js";
-import { resolveTargetDbName } from "../lib/config.js";
+async function main() {
+  const db = await getDb();
+  const collection = db.collection("healthcheck");
 
-const dbName = resolveTargetDbName();
-
-const client = await clientPromise;
-const db = client.db(dbName);
-const collection = db.collection("healthcheck");
-
-const result = await collection.updateOne(
-  { key: "initial-healthcheck" },
-  {
-    $setOnInsert: {
-      key: "initial-healthcheck",
-      status: "ok",
-      createdAt: new Date(),
-      source: "ullebets-unibet"
-    },
-    $set: {
-      verifiedAt: new Date()
-    }
-  },
-  { upsert: true }
-);
-
-const document = await collection.findOne({ key: "initial-healthcheck" });
-
-console.log(
-  JSON.stringify(
+  const result = await collection.updateOne(
+    { key: "initial-healthcheck" },
     {
-      database: db.databaseName,
-      collection: collection.collectionName,
-      acknowledged: result.acknowledged,
-      upsertedCount: result.upsertedCount,
-      matchedCount: result.matchedCount,
-      modifiedCount: result.modifiedCount,
-      documentId: document?._id?.toString() ?? null
+      $setOnInsert: {
+        key: "initial-healthcheck",
+        status: "ok",
+        createdAt: new Date(),
+        source: "ullebets-unibet",
+      },
+      $set: {
+        database: config.mongoDbName,
+        collection: "healthcheck",
+        verifiedAt: new Date(),
+      },
     },
-    null,
-    2
-  )
-);
+    { upsert: true }
+  );
 
-await client.close();
+  const document = await collection.findOne({ key: "initial-healthcheck" });
+
+  console.log(
+    JSON.stringify(
+      {
+        database: db.databaseName,
+        collection: collection.collectionName,
+        acknowledged: result.acknowledged,
+        upsertedCount: result.upsertedCount,
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+        documentId: document?._id?.toString() ?? null,
+      },
+      null,
+      2
+    )
+  );
+}
+
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  })
+  .finally(() => closeMongoClient());

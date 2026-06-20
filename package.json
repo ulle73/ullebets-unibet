@@ -6,14 +6,31 @@
   "scripts": {
     "healthcheck": "node scripts/healthcheck.js",
     "indexes": "node scripts/indexes.js",
+    "indexes:v2": "node scripts/create-indexes.js",
     "source:scan": "node scripts/source-scan.js",
+    "source:scan:v2": "node scripts/list-source-collections.js",
     "import:matches": "node scripts/import-matches.js",
+    "import:matches:v2": "node scripts/discover-from-ullebets-vecel.js",
+    "discover": "node scripts/discover-from-ullebets-vecel.js",
+    "discover:unibet": "node scripts/discover-unibet.js",
+    "import:snapshots": "node scripts/import-existing-snapshots.js",
     "odds:raw": "node scripts/odds-raw.js",
+    "odds:raw:v2": "node scripts/run-odds-worker.js",
+    "schedule:jobs": "node scripts/schedule-jobs.js",
+    "db:size": "node scripts/check-db-size.js",
     "coverage": "node scripts/coverage.js",
+    "coverage:v2": "node scripts/coverage-report.js",
+    "sync": "npm run indexes && npm run source:scan && npm run import:matches && npm run import:snapshots && npm run odds:raw",
+    "sync:v2": "npm run indexes:v2 && npm run source:scan:v2 && npm run import:matches:v2 && npm run import:snapshots && npm run odds:raw:v2",
+    "smoke": "npm run healthcheck && npm run sync",
+    "smoke:v2": "npm run healthcheck && npm run sync:v2",
     "test": "node --test"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
     "mongodb": "^6.20.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

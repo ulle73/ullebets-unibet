@@ -1,0 +1,21 @@
+{
+  "leagues": [
+    {
+      "key": "england-premier-league",
+      "sport": "football",
+      "country": "england",
+      "league_name": "Premier League",
+      "active": true,
+      "priority": 1,
+      "sources": {
+        "unibet": {
+          "enabled": true,
+          "league_slug": "england/premier-league",
+          "league_id": "",
+          "discovery_url": ""
+        }
+      },
+      "teams": []
+    }
+  ]
+}
