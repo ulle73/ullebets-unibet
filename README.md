@@ -1,40 +1,42 @@
 # ullebets-unibet
 
-Separat datainsamling för Unibet-odds.
+Separat databas/sync för data som redan finns i `ullebets-vecel`.
 
-Projektet ska återanvända samma Mongo/Cosmos-anslutning som `C:/dev/frontend/ullebets-vecel`, men alltid skriva till databasen `ullebets_unibet`.
+Projektet återanvänder samma Mongo/Cosmos-anslutning som `C:/dev/frontend/ullebets-vecel`, men skriver alltid till `ullebets_unibet`.
+
+## Datakälla
+
+Primär källa nu är gamla app-databasen:
+
+- `SOURCE_MONGODB_DB=app`
+- `app.teamstats` -> `ullebets_unibet.matches`
+- `app.analysis-snapshots` -> `ullebets_unibet.raw_source_snapshots`
+- shortlist från snapshots -> `ullebets_unibet.source_shortlist_items`
+
+Ingen ny Unibet-URL krävs i standardflödet.
 
 ## Start
 
 ```bash
 npm install
 npm run healthcheck
-npm run indexes
+npm run sync
 ```
 
-Skapa sedan `config/leagues_and_teams.json` från exemplet och fyll i Unibet discovery-URL per liga eller via env-template.
-
-## Körning
+## Kommandon
 
 ```bash
-npm run discover
-npm run worker:odds
-npm run coverage
+npm run source:scan       # lista collections i app
+npm run import:matches    # importera kommande matcher från app.teamstats
+npm run import:snapshots  # importera befintliga analysis-snapshots
+npm run sync              # kör allt ovan i rätt ordning
+npm run coverage          # rapport på importerad data
 ```
 
-## Collections
+## GitHub Actions
 
-- `healthcheck`
-- `matches`
-- `raw_unibet_discovery`
-- `odds_fetch_jobs`
-- `raw_odds_snapshots`
-- `coverage_reports`
+Workflowen `Unibet Data Sync` kör en gång per dag och gör samma app-sync.
 
-## Snapshot-plan
+## Viktigt
 
-När en match hittas skapas jobb för `FIRST_SEEN`, `T_MINUS_3D`, `T_MINUS_2D`, `T_MINUS_1D`, `T_MINUS_12H`, `T_MINUS_6H`, `T_MINUS_1H` och `T_MINUS_10M`.
-
-Closing odds ska räknas senare som sista lyckade snapshot före matchstart.
-
-Första målet är coverage audit: se vilka ligor, matcher och marknader som faktiskt finns, särskilt skott, skott på mål och hörnor.
+Det här repot ska inte uppfinna nya endpoints först. Det ska först kopiera och strukturera det som redan finns i `ullebets-vecel`. När vi har bevisat exakt vilka collections/fält som innehåller odds, CLV och marknader kan nästa steg vara att flytta över själva hämtlogiken.
