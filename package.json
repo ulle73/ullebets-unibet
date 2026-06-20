@@ -7,14 +7,12 @@
     "healthcheck": "node scripts/healthcheck.js",
     "indexes": "node scripts/create-indexes.js",
     "source:scan": "node scripts/list-source-collections.js",
+    "import:matches": "node scripts/discover-from-ullebets-vecel.js",
     "discover": "node scripts/discover-from-ullebets-vecel.js",
-    "discover:url-template": "node scripts/discover-unibet.js",
     "import:snapshots": "node scripts/import-existing-snapshots.js",
-    "sync": "npm run indexes && npm run discover && npm run import:snapshots",
-    "schedule": "node scripts/schedule-jobs.js",
-    "worker:odds": "node scripts/run-odds-worker.js",
+    "sync": "npm run indexes && npm run source:scan && npm run import:matches && npm run import:snapshots",
     "coverage": "node scripts/coverage-report.js",
-    "smoke": "npm run healthcheck && npm run indexes"
+    "smoke": "npm run healthcheck && npm run sync"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
