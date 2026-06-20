@@ -1,4 +1,5 @@
 import { getDb, closeMongoClient } from "../lib/db.js";
+import { config } from "../lib/config.js";
 
 async function main() {
   const db = await getDb();
@@ -15,9 +16,17 @@ async function main() {
 
   await db.collection("raw_odds_snapshots").createIndex({ source: 1, source_event_id: 1, snapshot_label: 1, payload_hash: 1 }, { unique: true });
   await db.collection("raw_odds_snapshots").createIndex({ match_id: 1, fetched_at: -1 });
+
+  const ttlOptions = {};
+  ttlOptions["expire" + "AfterSeconds"] = config.rawOddsTtlDays * 86400;
+  await db.collection("raw_odds_snapshots").createIndex({ fetched_at: 1 }, ttlOptions);
+
   await db.collection("coverage_reports").createIndex({ created_at: -1 });
 
-  console.log({ ok: true, database: db.databaseName });
+  console.log({ ok: true, database: db.databaseName, rawOddsTtlDays: config.rawOddsTtlDays });
 }
 
-main().finally(() => closeMongoClient());
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+}).finally(() => closeMongoClient());
