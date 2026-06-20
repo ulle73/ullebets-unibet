@@ -12,12 +12,14 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
       MONGODB_URI: ${{ secrets.MONGODB_URI }}
       MONGODB_DB: ullebets_unibet
       SOURCE_MONGODB_DB: app
       MAX_MATCHES_PER_RUN: 500
+      MAX_ODDS_JOBS_PER_RUN: 100
+      MAX_RAW_PAYLOAD_MB_PER_RUN: 300
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,3 +31,4 @@ jobs:
       - run: npm run source:scan
       - run: npm run discover
       - run: npm run import:snapshots
+      - run: npm run odds:raw
