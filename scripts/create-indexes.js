@@ -41,11 +41,11 @@ async function createUniqueIndexAfterCleanup(db, collectionName, keys, options =
     });
   }
 
+  const createIndexOptions = { ...options, unique: true };
+  delete createIndexOptions.keepSort;
+
   try {
-    await db.collection(collectionName).createIndex(keys, {
-      ...options,
-      unique: true,
-    });
+    await db.collection(collectionName).createIndex(keys, createIndexOptions);
   } catch (err) {
     if (!isDuplicateKeyError(err)) throw err;
 
@@ -78,17 +78,23 @@ async function main() {
   // Legacy version used a unique index on payload_hash only. That is too broad:
   // the same listView payload can legitimately be fetched for multiple jobs/times.
   await dropIndexIfExists(db, "raw_unibet_discovery", "payload_hash_1");
-  await db.collection("raw_unibet_discovery").createIndex(
-    { source: 1, job_type: 1, source_event_id: 1, snapshot_label: 1, payload_hash: 1 },
-    { unique: true }
+  await createUniqueIndexAfterCleanup(
+    db,
+    "raw_unibet_discovery",
+    { source: 1, job_type: 1, source_event_id: 1, snapshot_label: 1, payload_hash: 1 }
   );
 
   await db.collection("odds_fetch_jobs").createIndex({ status: 1, due_at: 1 });
-  await db.collection("odds_fetch_jobs").createIndex({ match_id: 1, source: 1, snapshot_label: 1 }, { unique: true });
+  await createUniqueIndexAfterCleanup(
+    db,
+    "odds_fetch_jobs",
+    { match_id: 1, source: 1, snapshot_label: 1 }
+  );
 
-  await db.collection("raw_odds_snapshots").createIndex(
-    { source: 1, job_type: 1, source_event_id: 1, snapshot_label: 1, payload_hash: 1 },
-    { unique: true }
+  await createUniqueIndexAfterCleanup(
+    db,
+    "raw_odds_snapshots",
+    { source: 1, job_type: 1, source_event_id: 1, snapshot_label: 1, payload_hash: 1 }
   );
   await db.collection("raw_odds_snapshots").createIndex({ match_id: 1, fetched_at: -1 });
 
