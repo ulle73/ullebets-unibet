@@ -29,6 +29,22 @@ Snapshot-schema:
 - `T_MINUS_1D`
 - `MATCH_DAY`
 
+## Index och duplicate cleanup
+
+`matches` ska ha exakt en rad per `source + source_event_id`. Det är rätt princip eftersom en match ska kunna ha många odds-snapshots utan att matchen själv dupliceras.
+
+`npm run indexes` rensar därför först befintliga dubletter i `matches`, behåller den senaste/bästa matchraden, loggar vilka `_id` som togs bort och skapar sedan unique-indexet.
+
+Manuell kontroll:
+
+```bash
+npm run cleanup:matches:dry
+npm run cleanup:matches
+npm run indexes
+```
+
+`raw_unibet_discovery` använder inte längre unique-index på bara `payload_hash`, eftersom samma listView-payload kan hämtas legitimt vid olika jobb/tider.
+
 ## Start
 
 ```bash
@@ -40,12 +56,15 @@ npm run sync
 ## Kommandon
 
 ```bash
-npm run source:scan       # lista collections i app
-npm run import:matches    # importera kommande matcher från app.teamstats och skapa oddsjobb
-npm run import:snapshots  # importera befintliga analysis-snapshots
-npm run odds:raw          # kör due oddsjobb och sparar ALL raw odds-payload
-npm run sync              # kör allt ovan i rätt ordning
-npm run coverage          # rapport på importerad data
+npm run source:scan          # lista collections i app
+npm run cleanup:matches:dry # visa match-dubletter utan att ta bort
+npm run cleanup:matches     # rensa match-dubletter i ullebets_unibet
+npm run indexes             # skapa index, inklusive säker duplicate-cleanup för matches
+npm run import:matches      # importera kommande matcher från app.teamstats och skapa oddsjobb
+npm run import:snapshots    # importera befintliga analysis-snapshots
+npm run odds:raw            # kör due oddsjobb och sparar ALL raw odds-payload
+npm run sync                # kör allt ovan i rätt ordning
+npm run coverage            # rapport på importerad data
 ```
 
 ## GitHub Actions
