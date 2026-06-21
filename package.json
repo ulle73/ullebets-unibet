@@ -6,6 +6,8 @@
   "scripts": {
     "healthcheck": "node scripts/healthcheck.js",
     "indexes": "node scripts/create-indexes.js",
+    "cleanup:matches": "node scripts/cleanup-duplicate-matches.js",
+    "cleanup:matches:dry": "node scripts/cleanup-duplicate-matches.js --dry-run",
     "source:scan": "node scripts/list-source-collections.js",
     "import:matches": "node scripts/discover-from-ullebets-vecel.js",
     "discover": "node scripts/discover-from-ullebets-vecel.js",
