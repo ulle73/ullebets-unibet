@@ -6,16 +6,62 @@ function isDuplicateKeyError(err) {
   return err?.code === 11000 || err?.codeName === "DuplicateKey";
 }
 
-async function dropIndexIfExists(db, collectionName, indexName) {
-  const collection = db.collection(collectionName);
+function normalizeKeySpec(keys) {
+  return Object.entries(keys).map(([field, direction]) => [field, direction]);
+}
 
-  let indexes = [];
+function indexKeyEquals(indexKey, requestedKeys) {
+  const existing = normalizeKeySpec(indexKey || {});
+  const requested = normalizeKeySpec(requestedKeys || {});
+
+  if (existing.length !== requested.length) return false;
+
+  return existing.every(([field, direction], index) => {
+    const [requestedField, requestedDirection] = requested[index];
+    return field === requestedField && direction === requestedDirection;
+  });
+}
+
+async function getIndexes(collection) {
   try {
-    indexes = await collection.indexes();
+    return await collection.indexes();
   } catch (err) {
-    if (err?.codeName === "NamespaceNotFound") return false;
+    if (err?.codeName === "NamespaceNotFound") return [];
     throw err;
   }
+}
+
+function isCompatibleExistingIndex(index, options = {}) {
+  if (options.unique && index.unique !== true) return false;
+
+  if (options.expireAfterSeconds != null) {
+    return index.expireAfterSeconds === options.expireAfterSeconds;
+  }
+
+  return true;
+}
+
+async function ensureIndex(db, collectionName, keys, options = {}) {
+  const collection = db.collection(collectionName);
+  const indexes = await getIndexes(collection);
+  const existing = indexes.find((index) => indexKeyEquals(index.key, keys));
+
+  if (existing) {
+    if (isCompatibleExistingIndex(existing, options)) {
+      console.log({ collection: collectionName, existingIndex: existing.name, skippedCreateForKeys: keys });
+      return existing.name;
+    }
+
+    await collection.dropIndex(existing.name);
+    console.warn({ collection: collectionName, droppedIncompatibleIndex: existing.name, keys });
+  }
+
+  return collection.createIndex(keys, options);
+}
+
+async function dropIndexIfExists(db, collectionName, indexName) {
+  const collection = db.collection(collectionName);
+  const indexes = await getIndexes(collection);
 
   if (!indexes.some((index) => index.name === indexName)) return false;
 
@@ -45,7 +91,7 @@ async function createUniqueIndexAfterCleanup(db, collectionName, keys, options =
   delete createIndexOptions.keepSort;
 
   try {
-    await db.collection(collectionName).createIndex(keys, createIndexOptions);
+    await ensureIndex(db, collectionName, keys, createIndexOptions);
   } catch (err) {
     if (!isDuplicateKeyError(err)) throw err;
 
@@ -70,10 +116,10 @@ async function main() {
   const db = await getDb();
 
   await createUniqueIndexAfterCleanup(db, "matches", { source: 1, source_event_id: 1 });
-  await db.collection("matches").createIndex({ league_key: 1, start_time: 1 });
-  await db.collection("matches").createIndex({ start_time: 1, status: 1 });
+  await ensureIndex(db, "matches", { league_key: 1, start_time: 1 });
+  await ensureIndex(db, "matches", { start_time: 1, status: 1 });
 
-  await db.collection("raw_unibet_discovery").createIndex({ source: 1, league_key: 1, fetched_at: -1 });
+  await ensureIndex(db, "raw_unibet_discovery", { source: 1, league_key: 1, fetched_at: -1 });
 
   // Legacy version used a unique index on payload_hash only. That is too broad:
   // the same listView payload can legitimately be fetched for multiple jobs/times.
@@ -84,7 +130,7 @@ async function main() {
     { source: 1, job_type: 1, source_event_id: 1, snapshot_label: 1, payload_hash: 1 }
   );
 
-  await db.collection("odds_fetch_jobs").createIndex({ status: 1, due_at: 1 });
+  await ensureIndex(db, "odds_fetch_jobs", { status: 1, due_at: 1 });
   await createUniqueIndexAfterCleanup(
     db,
     "odds_fetch_jobs",
@@ -96,13 +142,13 @@ async function main() {
     "raw_odds_snapshots",
     { source: 1, job_type: 1, source_event_id: 1, snapshot_label: 1, payload_hash: 1 }
   );
-  await db.collection("raw_odds_snapshots").createIndex({ match_id: 1, fetched_at: -1 });
+  await ensureIndex(db, "raw_odds_snapshots", { match_id: 1, fetched_at: -1 });
 
   const ttlOptions = {};
   ttlOptions["expire" + "AfterSeconds"] = config.rawOddsTtlDays * 86400;
-  await db.collection("raw_odds_snapshots").createIndex({ fetched_at: 1 }, ttlOptions);
+  await ensureIndex(db, "raw_odds_snapshots", { fetched_at: 1 }, ttlOptions);
 
-  await db.collection("coverage_reports").createIndex({ created_at: -1 });
+  await ensureIndex(db, "coverage_reports", { created_at: -1 });
 
   console.log({ ok: true, database: db.databaseName, rawOddsTtlDays: config.rawOddsTtlDays });
 }
